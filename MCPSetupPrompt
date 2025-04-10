@@ -193,30 +193,6 @@ You can test your server with the MCP Inspector:
 Install globally: npm install -g @modelcontextprotocol/inspector
 Run: mcp-inspector /path/to/your/server.js
 
-Integration with Claude Desktop
-To configure Claude Desktop to use your MCP server:
-
-Create or edit the configuration file at:
-
-macOS: ~/Library/Application Support/Claude/claude_mcp_settings.json
-Windows: %APPDATA%\Claude\claude_mcp_settings.json
-Linux: ~/.config/Claude/claude_mcp_settings.json
-
-
-Add your server configuration:
-json{
-  "mcpServers": {
-    "your-server-name": {
-      "command": "node",
-      "args": ["/path/to/your/server.js"],
-      "cwd": "/path/to/your/project",
-      "transportType": "stdio",
-      "disabled": false
-    }
-  }
-}
-
-
 Advanced Features
 Remote HTTP Servers
 For remote HTTP servers (beyond stdio), you need to implement:
