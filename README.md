@@ -4,7 +4,7 @@ A simple, ready-to-use prompt for AI assistants to help you build Model Context 
 
 ## 🚀 How to Use This Repository
 
-**Just 3 simple steps:**
+**Just 2 simple steps:**
 
 1. **Copy** the content from the `mcp-server-prompt.md` file in this repository
 2. **Paste** it into any AI assistant of your choice (Claude, ChatGPT, etc.)
