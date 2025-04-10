@@ -1,0 +1,329 @@
+Comprehensive Guide to Building a Model Context Protocol (MCP) Stdio Server
+
+Overview
+
+You're tasked with creating a Model Context Protocol (MCP) server using the stdio transport method. The Model Context Protocol is an open standard developed by Anthropic that enables AI assistants to connect with external tools, data sources, and systems in a standardized way. Your MCP server will allow AI assistants like Claude to access external functionality through a well-defined interface.
+Technical Requirements
+
+Environment Setup
+
+Node.js Version:
+
+Use a Long-Term Support (LTS) version (e.g., v18.x, v20.x)
+Avoid the newest releases initially (confirmed working: v20.11.1)
+Potential issue: Platform incompatibility with newer versions
+
+
+npm/Node Path:
+
+Ensure npm and node executables are correctly configured in your system's PATH
+Be cautious with multiple installations (system, nvm, conda)
+Path conflicts can cause MODULE_NOT_FOUND errors for npm-cli.js
+If using nvm, run nvm use <version> in the same terminal session
+
+
+
+Project Setup
+
+Initialize Project:
+
+Create a new directory for your project
+Run npm init -y to create a package.json file
+
+
+ES Modules Configuration:
+
+Add "type": "module" to package.json to use import/export syntax
+
+
+TypeScript Configuration (Optional but Recommended):
+
+Create a tsconfig.json file with the following settings:
+json{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./build",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": true,
+    "checkJs": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
+
+
+
+
+Dependencies
+
+Core Dependencies:
+
+Run: npm install @modelcontextprotocol/sdk zod dotenv
+Zod version: Use ^3.22.4 or compatible versions (>=3.22.2 for SDK >=0.6.0)
+Install additional libraries required for your specific tool functionality (axios, etc.)
+
+
+
+Server Implementation
+Basic Server Structure
+Create an index.js (or index.ts if using TypeScript) file with this structure:
+javascript#!/usr/bin/env node
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+import dotenv from "dotenv";
+
+// Load environment variables early
+dotenv.config();
+
+// Create an MCP server instance
+const server = new McpServer({
+  name: "your-server-name",
+  version: "1.0.0",
+  description: "Your server description"
+});
+
+// Define and register tools, resources, and prompts here
+
+// Wrap server setup in async function
+async function main() {
+  try {
+    // Create a transport (stdio for this example)
+    const transport = new StdioServerTransport();
+    
+    // Connect the server to the transport
+    await server.connect(transport);
+    
+    console.log("Server started successfully");
+  } catch (error) {
+    console.error("Server error:", error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+main();
+Tool Registration (Critical Component)
+When registering tools, use the correct server.tool() signature:
+javascript// Define input schema using Zod
+const toolInputSchema = z.object({
+  parameter1: z.string(),
+  parameter2: z.number().optional()
+});
+
+// Register the tool
+server.tool(
+  "tool_name",              // Name of the tool
+  "Tool description",       // Description of what the tool does
+  toolInputSchema.shape,    // IMPORTANT: Pass .shape, not the schema itself
+  async (input) => {
+    try {
+      // Tool implementation logic here
+      const result = `Processed: ${input.parameter1}`;
+      
+      // Return in standard MCP format
+      return {
+        content: [{ type: "text", text: result }]
+      };
+    } catch (error) {
+      // Error handling
+      return {
+        content: [{ type: "text", text: `Error: ${error.message}` }],
+        isError: true
+      };
+    }
+  }
+);
+Resource Registration
+For providing data sources (similar to GET endpoints in REST APIs):
+javascriptimport { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+// Register a resource
+server.resource(
+  "resource_name",
+  new ResourceTemplate("resource://{param}", { list: undefined }),
+  async (uri, { param }) => ({
+    contents: [{ 
+      uri: uri.href, 
+      text: `Resource content for ${param}` 
+    }]
+  })
+);
+Prompt Registration
+For pre-defined templates:
+javascript// Register a prompt
+server.prompt(
+  "prompt_name",
+  "Prompt description",
+  { param: z.string() },
+  async ({ param }) => ({
+    title: "Prompt Title",
+    content: `Prompt content with ${param}`
+  })
+);
+Important Implementation Details
+Error Handling
+
+Implement proper error handling in all tool handlers
+Return errors in the standard MCP format:
+javascript{
+  content: [{ type: "text", text: "Error message" }],
+  isError: true
+}
+
+Use try-catch blocks around async operations
+
+Response Format
+
+Tool handler MUST return objects matching the MCP CallToolResultSchema:
+javascript// Success case
+{
+  content: [{ type: "text", text: "Result text" }]
+}
+
+// Error case
+{
+  content: [{ type: "text", text: "Error text" }],
+  isError: true
+}
+
+
+Async Operations
+
+Always use async/await for asynchronous operations
+Ensure all promises are properly awaited
+
+Input Validation
+
+Use Zod for input schema validation
+Validate and sanitize all inputs to prevent security issues
+
+Testing and Debugging
+MCP Inspector
+You can test your server with the MCP Inspector:
+
+Install globally: npm install -g @modelcontextprotocol/inspector
+Run: mcp-inspector /path/to/your/server.js
+
+Integration with Claude Desktop
+To configure Claude Desktop to use your MCP server:
+
+Create or edit the configuration file at:
+
+macOS: ~/Library/Application Support/Claude/claude_mcp_settings.json
+Windows: %APPDATA%\Claude\claude_mcp_settings.json
+Linux: ~/.config/Claude/claude_mcp_settings.json
+
+
+Add your server configuration:
+json{
+  "mcpServers": {
+    "your-server-name": {
+      "command": "node",
+      "args": ["/path/to/your/server.js"],
+      "cwd": "/path/to/your/project",
+      "transportType": "stdio",
+      "disabled": false
+    }
+  }
+}
+
+
+Advanced Features
+Remote HTTP Servers
+For remote HTTP servers (beyond stdio), you need to implement:
+
+HTTP with Server-Sent Events (SSE) transport
+Authentication (OAuth 2.1 recommended for remote servers)
+Proper CORS configuration for web clients
+
+Security Best Practices
+
+Follow the principle of least privilege
+Implement multiple layers of security (defense in depth)
+Keep dependencies updated and audit them regularly
+Validate all message content and sanitize sensitive information
+Use secure communication channels for remote servers
+Report tool errors within the result object, not as protocol-level errors
+
+Common Pitfalls to Avoid
+
+Not passing .shape property when registering tools (use schema.shape, not just schema)
+Incorrect return format from tool handlers (must match CallToolResultSchema)
+Missing error handling in async operations
+Path configuration issues with Node.js and npm
+Not respecting the module system specified in package.json
+Incompatible dependency versions (especially Zod)
+Not properly handling transport connection failures
+
+Example: Complete Echo Server
+Here's a complete example of a simple echo server:
+javascript#!/usr/bin/env node
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+// Create an MCP server instance
+const server = new McpServer({
+  name: "echo-server",
+  version: "1.0.0",
+  description: "A simple echo server"
+});
+
+// Define echo tool input schema
+const echoInputSchema = z.object({
+  message: z.string().describe("Message to echo back")
+});
+
+// Register echo tool
+server.tool(
+  "echo",
+  "Echoes back the input message",
+  echoInputSchema.shape,
+  async (input) => {
+    try {
+      return {
+        content: [{ type: "text", text: `Echo: ${input.message}` }]
+      };
+    } catch (error) {
+      return {
+        content: [{ type: "text", text: `Error: ${error.message}` }],
+        isError: true
+      };
+    }
+  }
+);
+
+// Start the server
+async function main() {
+  try {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.log("Echo server started successfully");
+  } catch (error) {
+    console.error("Server error:", error);
+    process.exit(1);
+  }
+}
+
+main();
+Final Checklist
+
+ Correct Node.js and npm setup
+ ES Modules configuration in package.json
+ All required dependencies installed
+ Proper error handling throughout the code
+ Tools registered with correct signature
+ Return values in correct MCP format
+ All async operations properly awaited
+ Server connection properly implemented
+ Testing completed with MCP Inspector
+ Claude Desktop configuration (if needed)
+
+By following this guide, you should be able to create a fully functional MCP stdio server that can be used with Claude Desktop or other MCP-compatible clients.
