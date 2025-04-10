@@ -8,7 +8,6 @@ A simple, ready-to-use prompt for AI assistants to help you build Model Context 
 
 1. **Copy** the content from the `mcp-server-prompt.md` file in this repository
 2. **Paste** it into any AI assistant of your choice (Claude, ChatGPT, etc.)
-3. **Follow** the instructions the AI provides to build your MCP stdio server
 
 That's it! No complex installation or setup required.
 
