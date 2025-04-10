@@ -20,7 +20,6 @@ The prompt file contains comprehensive instructions for AI assistants to guide y
 - Creating the MCP server structure
 - Implementing tools, resources, and prompts
 - Testing and debugging your server
-- Connecting your server to Claude Desktop
 
 ## 🌟 Why Use This Prompt?
 
