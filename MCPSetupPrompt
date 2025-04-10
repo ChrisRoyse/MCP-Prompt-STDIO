@@ -5,24 +5,6 @@ Overview
 You're tasked with creating a Model Context Protocol (MCP) server using the stdio transport method. The Model Context Protocol is an open standard developed by Anthropic that enables AI assistants to connect with external tools, data sources, and systems in a standardized way. Your MCP server will allow AI assistants like Claude to access external functionality through a well-defined interface.
 Technical Requirements
 
-Environment Setup
-
-Node.js Version:
-
-Use a Long-Term Support (LTS) version (e.g., v18.x, v20.x)
-Avoid the newest releases initially (confirmed working: v20.11.1)
-Potential issue: Platform incompatibility with newer versions
-
-
-npm/Node Path:
-
-Ensure npm and node executables are correctly configured in your system's PATH
-Be cautious with multiple installations (system, nvm, conda)
-Path conflicts can cause MODULE_NOT_FOUND errors for npm-cli.js
-If using nvm, run nvm use <version> in the same terminal session
-
-
-
 Project Setup
 
 Initialize Project:
